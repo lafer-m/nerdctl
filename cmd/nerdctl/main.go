@@ -240,6 +240,9 @@ func newApp() *cobra.Command {
 
 		// Compose
 		newComposeCommand(),
+
+		// session
+		newSessionCommand(),
 	)
 	return rootCmd
 }
