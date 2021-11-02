@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"path"
@@ -30,6 +31,7 @@ import (
 
 	"github.com/containerd/console"
 	"github.com/containerd/containerd"
+	"github.com/containerd/containerd/api/services/sessions/v1"
 	"github.com/containerd/containerd/cio"
 	"github.com/containerd/containerd/cmd/ctr/commands"
 	"github.com/containerd/containerd/cmd/ctr/commands/tasks"
@@ -207,6 +209,11 @@ func runAction(cmd *cobra.Command, args []string) error {
 		args = newArg
 	}
 
+	sessionID := getSessionID()
+	if sessionID == "" {
+		return errors.New("you must setup a session first with `dacsctl session -u ${username} -p ${password}`")
+	}
+
 	if len(args) < 1 {
 		return errors.New("image name needs to be specified")
 	}
@@ -243,6 +250,10 @@ func runAction(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	defer cancel()
+
+	if _, err := client.SessionService().VerifySession(ctx, &sessions.VerifySessionRequest{ID: sessionID}); err != nil {
+		return err
+	}
 
 	var (
 		opts  []oci.SpecOpts
@@ -1104,4 +1115,21 @@ func parseEnvVars(paths []string) ([]string, error) {
 		}
 	}
 	return vars, nil
+}
+
+func getSessionID() string {
+	sID := ""
+	f, err := os.Open("/proc/self/stat")
+	if err != nil {
+		return sID
+	}
+
+	content, err := ioutil.ReadAll(f)
+	items := strings.Split(string(content), " ")
+	sid := items[5]
+	uuid := os.Getenv(uuidKey)
+	if uuid == "" {
+		return sID
+	}
+	return fmt.Sprintf("%s_%s", sid, uuid)
 }

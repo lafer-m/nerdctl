@@ -20,6 +20,12 @@ import (
 	"golang.org/x/term"
 )
 
+const (
+	userKey  = "DACSUSER"
+	tokenKey = "DACSTOKEN"
+	uuidKey  = "DACSUUID"
+)
+
 func newSessionCommand() *cobra.Command {
 	var sessionCommand = &cobra.Command{
 		Use:           "session",
@@ -98,9 +104,9 @@ func terminal(username, token string, ctx context.Context, client sessions.Sessi
 	}
 	randomUUID := idgen.GenerateID()[:24]
 	envs := os.Environ()
-	envs = append(envs, fmt.Sprintf("DACUSER=%s", username))
-	envs = append(envs, fmt.Sprintf("DACTOKEN=%s", token))
-	envs = append(envs, fmt.Sprintf("DACUUID=%s", randomUUID))
+	envs = append(envs, fmt.Sprintf("%s=%s", userKey, username))
+	envs = append(envs, fmt.Sprintf("%s=%s", tokenKey, token))
+	envs = append(envs, fmt.Sprintf("%s=%s", uuidKey, randomUUID))
 	c := exec.Command(shell)
 	c.Env = envs
 
@@ -140,6 +146,7 @@ func terminal(username, token string, ctx context.Context, client sessions.Sessi
 			Username: username,
 			Token:    token,
 		},
+		Action: sessions.ACTION_REGISTER,
 	}
 
 	if _, err := client.RegisterSession(ctx, req); err != nil {
@@ -153,6 +160,10 @@ func terminal(username, token string, ctx context.Context, client sessions.Sessi
 
 	_, _ = io.Copy(os.Stdout, ptmx)
 
+	req.Action = sessions.ACTION_UNREGISTER
+	if _, err := client.RegisterSession(ctx, req); err != nil {
+		return err
+	}
 	fmt.Print("exit session.")
 	return nil
 }
