@@ -30,6 +30,7 @@ import (
 	"github.com/containerd/nerdctl/pkg/idutil/containerwalker"
 	"github.com/containerd/nerdctl/pkg/labels"
 	"github.com/containerd/nerdctl/pkg/namestore"
+	"github.com/containerd/nerdctl/pkg/sessionutil"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -60,6 +61,10 @@ func rmAction(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	defer cancel()
+
+	if err := sessionutil.CheckSession(ctx, client); err != nil {
+		return err
+	}
 
 	dataStore, err := getDataStore(cmd)
 	if err != nil {

@@ -14,16 +14,11 @@ import (
 	"github.com/containerd/containerd/platforms"
 	"github.com/containerd/nerdctl/pkg/idgen"
 	"github.com/containerd/nerdctl/pkg/platformutil"
+	"github.com/containerd/nerdctl/pkg/sessionutil"
 	"github.com/creack/pty"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
-)
-
-const (
-	userKey  = "DACSUSER"
-	tokenKey = "DACSTOKEN"
-	uuidKey  = "DACSUUID"
 )
 
 func newSessionCommand() *cobra.Command {
@@ -104,9 +99,9 @@ func terminal(username, token string, ctx context.Context, client sessions.Sessi
 	}
 	randomUUID := idgen.GenerateID()[:24]
 	envs := os.Environ()
-	envs = append(envs, fmt.Sprintf("%s=%s", userKey, username))
-	envs = append(envs, fmt.Sprintf("%s=%s", tokenKey, token))
-	envs = append(envs, fmt.Sprintf("%s=%s", uuidKey, randomUUID))
+	envs = append(envs, fmt.Sprintf("%s=%s", sessionutil.UserKey, username))
+	envs = append(envs, fmt.Sprintf("%s=%s", sessionutil.TokenKey, token))
+	envs = append(envs, fmt.Sprintf("%s=%s", sessionutil.UUIDKey, randomUUID))
 	c := exec.Command(shell)
 	c.Env = envs
 

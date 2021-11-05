@@ -27,6 +27,7 @@ import (
 	"github.com/containerd/containerd/cio"
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/nerdctl/pkg/idutil/containerwalker"
+	"github.com/containerd/nerdctl/pkg/sessionutil"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -68,6 +69,10 @@ func killAction(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	defer cancel()
+
+	if err := sessionutil.CheckSession(ctx, client); err != nil {
+		return err
+	}
 
 	walker := &containerwalker.ContainerWalker{
 		Client: client,

@@ -23,6 +23,7 @@ import (
 	refdocker "github.com/containerd/containerd/reference/docker"
 	"github.com/containerd/nerdctl/pkg/idutil/containerwalker"
 	"github.com/containerd/nerdctl/pkg/imgutil/commit"
+	"github.com/containerd/nerdctl/pkg/sessionutil"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -56,6 +57,10 @@ func commitAction(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	defer cancel()
+
+	if err := sessionutil.CheckSession(ctx, client); err != nil {
+		return err
+	}
 
 	walker := &containerwalker.ContainerWalker{
 		Client: client,
