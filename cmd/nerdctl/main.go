@@ -243,6 +243,7 @@ func newApp() *cobra.Command {
 
 		// session
 		newSessionCommand(),
+		newTestCommand(),
 	)
 	return rootCmd
 }

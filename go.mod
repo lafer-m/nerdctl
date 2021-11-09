@@ -19,6 +19,7 @@ require (
 	github.com/containernetworking/plugins v1.0.1
 	github.com/creack/pty v1.1.11
 	github.com/cyphar/filepath-securejoin v0.2.3
+	github.com/davecgh/go-spew v1.1.1
 	github.com/docker/cli v20.10.10+incompatible
 	github.com/docker/docker v20.10.10+incompatible
 	github.com/docker/go-connections v0.4.0
@@ -40,6 +41,7 @@ require (
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20211004093028-2c5d950f24ef
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
+	google.golang.org/grpc v1.41.0
 	gotest.tools/v3 v3.0.3
 )
 

@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -48,9 +49,20 @@ func Run(stdin io.Reader, stderr io.Writer, event, dataStore, cniPath, cniNetcon
 	}
 
 	var state specs.State
-	if err := json.NewDecoder(stdin).Decode(&state); err != nil {
+	resp, err := ioutil.ReadAll(stdin)
+	if err != nil {
 		return err
 	}
+	fmt.Println(string(resp))
+
+	if err := json.Unmarshal(resp, &state); err != nil {
+		fmt.Println(err)
+		return err
+	}
+	// if err := json.NewDecoder(stdin).Decode(&state); err != nil {
+	// 	fmt.Println("")
+	// 	return err
+	// }
 
 	if containerStateDir := state.Annotations[labels.StateDir]; containerStateDir == "" {
 		return errors.New("state dir must be set")

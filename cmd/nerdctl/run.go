@@ -950,7 +950,7 @@ func withNerdctlOCIHook(cmd *cobra.Command, id, stateDir string) (oci.SpecOpts, 
 			s.Hooks = &specs.Hooks{}
 		}
 		crArgs := append(args, "createRuntime")
-		s.Hooks.CreateRuntime = append(s.Hooks.CreateRuntime, specs.Hook{
+		s.Hooks.Prestart = append(s.Hooks.CreateRuntime, specs.Hook{
 			Path: selfExe,
 			Args: crArgs,
 			Env:  os.Environ(),

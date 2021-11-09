@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"syscall"
 
 	"github.com/containerd/containerd"
@@ -30,7 +31,6 @@ import (
 	"github.com/containerd/nerdctl/pkg/idutil/containerwalker"
 	"github.com/containerd/nerdctl/pkg/labels"
 	"github.com/containerd/nerdctl/pkg/namestore"
-	"github.com/containerd/nerdctl/pkg/sessionutil"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -62,9 +62,9 @@ func rmAction(cmd *cobra.Command, args []string) error {
 	}
 	defer cancel()
 
-	if err := sessionutil.CheckSession(ctx, client); err != nil {
-		return err
-	}
+	// if err := sessionutil.CheckSession(ctx, client); err != nil {
+	// 	return err
+	// }
 
 	dataStore, err := getDataStore(cmd)
 	if err != nil {
@@ -207,8 +207,9 @@ func removeContainer(cmd *cobra.Command, ctx context.Context, client *containerd
 		if err == nil {
 			<-es
 		}
+
 		_, err = task.Delete(ctx, containerd.WithProcessKill)
-		if err != nil && !errdefs.IsNotFound(err) {
+		if err != nil && (!errdefs.IsNotFound(err) || !isSanboxNotRunning(err)) {
 			logrus.WithError(err).Warnf("failed to delete task %v", id)
 		}
 	}
@@ -228,4 +229,13 @@ func removeContainer(cmd *cobra.Command, ctx context.Context, client *containerd
 func rmShellComplete(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	// show container names
 	return shellCompleteContainerNames(cmd, nil)
+}
+
+func isSanboxNotRunning(err error) bool {
+	if err != nil {
+		if strings.Contains(err.Error(), "sandbox is not running") {
+			return true
+		}
+	}
+	return false
 }
