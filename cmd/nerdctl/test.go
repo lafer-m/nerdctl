@@ -49,6 +49,14 @@ func newTestCommand() *cobra.Command {
 	}
 	deleteCmd.Flags().String("address", "127.0.0.1:8888", "the containerd tcp grpc address")
 
+	listCmd := &cobra.Command{
+		Use:   "list",
+		Short: "test list containers",
+		RunE:  testListAction,
+	}
+	listCmd.Flags().String("address", "127.0.0.1:8888", "the containerd tcp grpc address")
+
+	testCommand.AddCommand(listCmd)
 	testCommand.AddCommand(deleteCmd)
 	testCommand.AddCommand(runCmd)
 	return testCommand
@@ -82,6 +90,35 @@ func testRemoveAction(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
+
+	return nil
+}
+
+func testListAction(cmd *cobra.Command, args []string) error {
+	if len(args) <= 0 {
+		return fmt.Errorf("at least one arg")
+	}
+	grpcDialOpts := []grpc.DialOption{
+		grpc.WithBlock(),
+		grpc.WithInsecure(),
+	}
+
+	addr, err := cmd.Flags().GetString("address")
+	if err != nil {
+		return err
+	}
+	conn, err := grpc.Dial(addr, grpcDialOpts...)
+	if err != nil {
+		return err
+	}
+	cli := dacscri.NewDacsCRIClient(conn)
+	req := &dacscri.ListContainersRequest{}
+	resp, err := cli.List(context.Background(), req)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(spew.Sdump(resp))
 
 	return nil
 }
