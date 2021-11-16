@@ -352,6 +352,11 @@ func onCreateRuntime(opts *handlerOpts, stateDir string) error {
 				return fmt.Errorf("not found container eth0 interface")
 			}
 			containerProxyPIDsFile := path.Join(stateDir, "proxy.pid")
+			f, err := os.OpenFile(containerProxyPIDsFile, os.O_RDWR|os.O_CREATE|os.O_EXCL|os.O_SYNC|os.O_APPEND, 0666)
+			if err != nil {
+				return err
+			}
+			defer f.Close()
 			for _, port := range opts.ports {
 				// start nerd-proxy
 				proxyCmd, err := proxy.NewProxyCommand(port.Protocol, net.IP("0.0.0.0"), int(port.HostPort), eth0.IPConfigs[0].IP, int(port.ContainerPort), "")
@@ -361,7 +366,7 @@ func onCreateRuntime(opts *handlerOpts, stateDir string) error {
 				if err := proxyCmd.Start(); err != nil {
 					return fmt.Errorf("start proxy err: %v", err)
 				}
-				if err := writePID(containerProxyPIDsFile, proxyCmd.PID()); err != nil {
+				if err := writePID(f, proxyCmd.PID()); err != nil {
 					if err := proxyCmd.Stop(); err != nil {
 						return err
 					}
@@ -386,22 +391,9 @@ func onCreateRuntime(opts *handlerOpts, stateDir string) error {
 	return nil
 }
 
-func writePID(path string, pid int) error {
-	path, err := filepath.Abs(path)
-	if err != nil {
-		return err
-	}
-
-	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_EXCL|os.O_SYNC|os.O_APPEND, 0666)
-	if err != nil {
-		return err
-	}
-	_, err = fmt.Fprintf(f, "%d\n", pid)
-	f.Close()
-	if err != nil {
-		return err
-	}
-	return nil
+func writePID(f *os.File, pid int) error {
+	_, err := fmt.Fprintf(f, "%d\n", pid)
+	return err
 }
 
 func onPostStop(opts *handlerOpts) error {
