@@ -24,7 +24,9 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/containerd/containerd/cmd/ctr/commands"
@@ -34,6 +36,7 @@ import (
 	"github.com/containerd/nerdctl/pkg/labels"
 	"github.com/containerd/nerdctl/pkg/netutil"
 	"github.com/containerd/nerdctl/pkg/netutil/nettype"
+	"github.com/containerd/nerdctl/pkg/proxy"
 	"github.com/containerd/nerdctl/pkg/rootlessutil"
 	types100 "github.com/containernetworking/cni/pkg/types/100"
 	dopts "github.com/docker/cli/opts"
@@ -53,7 +56,6 @@ func Run(stdin io.Reader, stderr io.Writer, event, dataStore, cniPath, cniNetcon
 	if err != nil {
 		return err
 	}
-	fmt.Println(string(resp))
 
 	if err := json.Unmarshal(resp, &state); err != nil {
 		fmt.Println(err)
@@ -84,9 +86,11 @@ func Run(stdin io.Reader, stderr io.Writer, event, dataStore, cniPath, cniNetcon
 		return err
 	}
 
+	containerStateDir := state.Annotations[labels.StateDir]
+
 	switch event {
 	case "createRuntime":
-		return onCreateRuntime(opts)
+		return onCreateRuntime(opts, containerStateDir)
 	case "postStop":
 		return onPostStop(opts)
 	default:
@@ -302,7 +306,7 @@ func getPortMapOpts(opts *handlerOpts) ([]gocni.NamespaceOpts, error) {
 	return nil, nil
 }
 
-func onCreateRuntime(opts *handlerOpts) error {
+func onCreateRuntime(opts *handlerOpts, stateDir string) error {
 	if pkgapparmor.HostSupports() {
 		loadAppArmor()
 	}
@@ -341,6 +345,32 @@ func onCreateRuntime(opts *handlerOpts) error {
 		if err := hs.Acquire(hsMeta); err != nil {
 			return err
 		}
+
+		if len(opts.ports) > 0 {
+			eth0 := cniRes.Interfaces["eth0"]
+			if eth0 == nil {
+				return fmt.Errorf("not found container eth0 interface")
+			}
+			containerProxyPIDsFile := path.Join(stateDir, "proxy.pid")
+			for _, port := range opts.ports {
+				// start nerd-proxy
+				proxyCmd, err := proxy.NewProxyCommand(port.Protocol, net.IP("0.0.0.0"), int(port.HostPort), eth0.IPConfigs[0].IP, int(port.ContainerPort), "")
+				if err != nil {
+					return fmt.Errorf("new proxy command err: %v", err)
+				}
+				if err := proxyCmd.Start(); err != nil {
+					return fmt.Errorf("start proxy err: %v", err)
+				}
+				if err := writePID(containerProxyPIDsFile, proxyCmd.PID()); err != nil {
+					if err := proxyCmd.Stop(); err != nil {
+						return err
+					}
+					return err
+				}
+
+			}
+		}
+
 		if len(opts.ports) > 0 && rootlessutil.IsRootlessChild() {
 			pm, err := rootlessutil.NewRootlessCNIPortManager(opts.rootlessKitClient)
 			if err != nil {
@@ -352,6 +382,24 @@ func onCreateRuntime(opts *handlerOpts) error {
 				}
 			}
 		}
+	}
+	return nil
+}
+
+func writePID(path string, pid int) error {
+	path, err := filepath.Abs(path)
+	if err != nil {
+		return err
+	}
+
+	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_EXCL|os.O_SYNC|os.O_APPEND, 0666)
+	if err != nil {
+		return err
+	}
+	_, err = fmt.Fprintf(f, "%d\n", pid)
+	f.Close()
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -386,6 +434,35 @@ func onPostStop(opts *handlerOpts) error {
 		if err := hs.Release(ns, opts.state.ID); err != nil {
 			return err
 		}
+		state := opts.state.Annotations[labels.StateDir]
+		if err := cleanProxyPIDs(state); err != nil {
+			return err
+		}
 	}
+	return nil
+}
+
+func cleanProxyPIDs(stateDir string) error {
+	pids, err := ioutil.ReadFile(path.Join(stateDir, "proxy.pid"))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	pidstr := strings.Split(string(pids), "\n")
+
+	for _, pid := range pidstr {
+		if pid != "" {
+			p, err := strconv.Atoi(pid)
+			if err != nil {
+				return err
+			}
+			if err := proxy.SignalStop(p); err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }

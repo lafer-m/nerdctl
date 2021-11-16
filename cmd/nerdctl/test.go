@@ -95,9 +95,9 @@ func testRemoveAction(cmd *cobra.Command, args []string) error {
 }
 
 func testListAction(cmd *cobra.Command, args []string) error {
-	if len(args) <= 0 {
-		return fmt.Errorf("at least one arg")
-	}
+	// if len(args) <= 0 {
+	// 	return fmt.Errorf("at least one arg")
+	// }
 	grpcDialOpts := []grpc.DialOption{
 		grpc.WithBlock(),
 		grpc.WithInsecure(),
