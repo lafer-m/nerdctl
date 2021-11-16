@@ -346,7 +346,9 @@ func onCreateRuntime(opts *handlerOpts, stateDir string) error {
 			return err
 		}
 
-		if len(opts.ports) > 0 {
+		_, ok := opts.state.Annotations[labels.UserlandProxy]
+
+		if len(opts.ports) > 0 && ok {
 			eth0 := cniRes.Interfaces["eth0"]
 			if eth0 == nil {
 				return fmt.Errorf("not found container eth0 interface")

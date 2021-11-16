@@ -69,4 +69,7 @@ const (
 
 	// Platform is the normalized platform string like "linux/ppc64le".
 	Platform = Prefix + "platform"
+
+	// UserlandProxy
+	UserlandProxy = Prefix + "userlandproxy"
 )
