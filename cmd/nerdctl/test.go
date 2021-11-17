@@ -19,11 +19,14 @@ package main
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/containerd/containerd/api/services/dacscri/v1"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 func newTestCommand() *cobra.Command {
@@ -41,20 +44,28 @@ func newTestCommand() *cobra.Command {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
-	runCmd.Flags().String("address", "127.0.0.1:8888", "the containerd tcp grpc address")
+	runCmd.Flags().String("address", "127.0.0.1:10250", "the containerd tcp grpc address")
+	runCmd.Flags().String("cert", "/home/zhouxiaoming/root.crt", "cert ")
+	runCmd.Flags().String("image", "nginx", "run image")
+	runCmd.Flags().String("service", "gateway", "service type")
+	runCmd.Flags().String("tar_type", "FILE", "tar type")
+	runCmd.Flags().String("tar_url", "/home/zhouxiaoming/test/test", "tar url")
+
 	deleteCmd := &cobra.Command{
 		Use:   "remove",
 		Short: "test remove container",
 		RunE:  testRemoveAction,
 	}
-	deleteCmd.Flags().String("address", "127.0.0.1:8888", "the containerd tcp grpc address")
+	deleteCmd.Flags().String("address", "127.0.0.1:10250", "the containerd tcp grpc address")
+	deleteCmd.Flags().String("cert", "/home/zhouxiaoming/root.crt", "cert ")
 
 	listCmd := &cobra.Command{
 		Use:   "list",
 		Short: "test list containers",
 		RunE:  testListAction,
 	}
-	listCmd.Flags().String("address", "127.0.0.1:8888", "the containerd tcp grpc address")
+	listCmd.Flags().String("address", "127.0.0.1:10250", "the containerd tcp grpc address")
+	listCmd.Flags().String("cert", "/home/zhouxiaoming/root.crt", "cert ")
 
 	testCommand.AddCommand(listCmd)
 	testCommand.AddCommand(deleteCmd)
@@ -66,20 +77,17 @@ func testRemoveAction(cmd *cobra.Command, args []string) error {
 	if len(args) <= 0 {
 		return fmt.Errorf("at least one arg")
 	}
-	grpcDialOpts := []grpc.DialOption{
-		grpc.WithBlock(),
-		grpc.WithInsecure(),
-	}
 
 	addr, err := cmd.Flags().GetString("address")
 	if err != nil {
 		return err
 	}
-	conn, err := grpc.Dial(addr, grpcDialOpts...)
+
+	cert, _ := cmd.Flags().GetString("cert")
+	cli, err := newTcpClient(cert, addr)
 	if err != nil {
 		return err
 	}
-	cli := dacscri.NewDacsCRIClient(conn)
 
 	for _, cid := range args {
 		req := &dacscri.RemoveContainerRequest{
@@ -98,20 +106,16 @@ func testListAction(cmd *cobra.Command, args []string) error {
 	// if len(args) <= 0 {
 	// 	return fmt.Errorf("at least one arg")
 	// }
-	grpcDialOpts := []grpc.DialOption{
-		grpc.WithBlock(),
-		grpc.WithInsecure(),
-	}
 
+	cert, _ := cmd.Flags().GetString("cert")
 	addr, err := cmd.Flags().GetString("address")
 	if err != nil {
 		return err
 	}
-	conn, err := grpc.Dial(addr, grpcDialOpts...)
+	cli, err := newTcpClient(cert, addr)
 	if err != nil {
 		return err
 	}
-	cli := dacscri.NewDacsCRIClient(conn)
 	req := &dacscri.ListContainersRequest{}
 	resp, err := cli.List(context.Background(), req)
 	if err != nil {
@@ -119,37 +123,53 @@ func testListAction(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Println(spew.Sdump(resp))
-
 	return nil
 }
 
 func testRunAction(cmd *cobra.Command, args []string) error {
-	// Time to wait after sending a SIGTERM and before sending a SIGKILL.
-	// Default is 10 seconds.
-
-	grpcDialOpts := []grpc.DialOption{
-		grpc.WithBlock(),
-		grpc.WithInsecure(),
-	}
-
+	cert, _ := cmd.Flags().GetString("cert")
 	addr, err := cmd.Flags().GetString("address")
 	if err != nil {
 		return err
 	}
-	conn, err := grpc.Dial(addr, grpcDialOpts...)
+	cli, err := newTcpClient(cert, addr)
 	if err != nil {
 		return err
 	}
-	cli := dacscri.NewDacsCRIClient(conn)
+	image, err := cmd.Flags().GetString("image")
+	if err != nil {
+		return err
+	}
+
+	service, err := cmd.Flags().GetString("service")
+	if err != nil {
+		return err
+	}
+
+	token, err := signToken(service)
+	if err != nil {
+		return err
+	}
+
+	tar_type, err := cmd.Flags().GetString("tar_type")
+	if err != nil {
+		return err
+	}
+	tp := dacscri.TARTYPE_FILE
+	if tar_type == "HTTP" {
+		tp = dacscri.TARTYPE_HTTP
+	}
+
+	tar_url, _ := cmd.Flags().GetString("tar_url")
 
 	req := &dacscri.RunContainerRequest{
-		Image:   "nginx",
-		Token:   "xxxx",
+		Image:   image,
+		Token:   token,
 		Publish: []string{"79:80"},
 		App: &dacscri.App{
-			Type:    "gateway",
-			TarType: dacscri.TARTYPE_FILE,
-			TarUrl:  "/home/zhouxiaoming/test/test",
+			Type:    service,
+			TarType: tp,
+			TarUrl:  tar_url,
 		},
 	}
 
@@ -161,4 +181,44 @@ func testRunAction(cmd *cobra.Command, args []string) error {
 	fmt.Println(spew.Sdump(resp))
 
 	return nil
+}
+
+func newTcpClient(cert, addr string) (dacscri.DacsCRIClient, error) {
+	grpcDialOpts := []grpc.DialOption{}
+
+	if cert == "" {
+		grpcDialOpts = append(grpcDialOpts, grpc.WithInsecure())
+	} else {
+		creds, err := credentials.NewClientTLSFromFile(cert, "dacsd_server")
+		if err != nil {
+			return nil, err
+		}
+		grpcDialOpts = append(grpcDialOpts, grpc.WithTransportCredentials(creds))
+	}
+
+	conn, err := grpc.Dial(addr, grpcDialOpts...)
+	if err != nil {
+		return nil, err
+	}
+	cli := dacscri.NewDacsCRIClient(conn)
+	return cli, nil
+}
+
+var jwtKey = []byte("my_secret_key")
+
+type PatrickClaims struct {
+	jwt.StandardClaims
+	Name string `json:"name"`
+}
+
+func signToken(name string) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, PatrickClaims{
+		Name: name,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().Unix() + 300,
+			IssuedAt:  time.Now().Unix() - 100,
+			Issuer:    "patrick",
+		},
+	})
+	return token.SignedString(jwtKey)
 }

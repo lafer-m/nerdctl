@@ -20,6 +20,7 @@ require (
 	github.com/creack/pty v1.1.11
 	github.com/cyphar/filepath-securejoin v0.2.3
 	github.com/davecgh/go-spew v1.1.1
+	github.com/dgrijalva/jwt-go v0.0.0-20170104182250-a601269ab70c
 	github.com/docker/cli v20.10.10+incompatible
 	github.com/docker/docker v20.10.10+incompatible
 	github.com/docker/go-connections v0.4.0

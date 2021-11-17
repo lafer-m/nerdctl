@@ -46,7 +46,7 @@ nerdctl:
 	$(GO_BUILD) -o $(CURDIR)/_output/nerdctl$(BIN_EXT) $(PACKAGE)/cmd/nerdctl
 
 dacsctl:
-	$(GO_BUILD) -o $(CURDIR)/_output/dacsctl$(BIN_EXT) $(PACKAGE)/cmd/nerdctl
+	$(GO_BUILD) -o  $(CURDIR)/_output/dacsctl$(BIN_EXT) $(PACKAGE)/cmd/nerdctl
 
 clean:
 	find . -name \*~ -delete
