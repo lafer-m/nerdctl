@@ -53,6 +53,7 @@ import (
 	"github.com/containerd/nerdctl/pkg/portutil"
 	"github.com/containerd/nerdctl/pkg/resolvconf"
 	"github.com/containerd/nerdctl/pkg/rootlessutil"
+	"github.com/containerd/nerdctl/pkg/sessionutil"
 	"github.com/containerd/nerdctl/pkg/strutil"
 	"github.com/containerd/nerdctl/pkg/taskutil"
 	"github.com/docker/cli/opts"
@@ -244,9 +245,9 @@ func runAction(cmd *cobra.Command, args []string) error {
 	}
 	defer cancel()
 
-	// if err := sessionutil.CheckSession(ctx, client); err != nil {
-	// 	return err
-	// }
+	if err := sessionutil.CheckSession(ctx, client); err != nil {
+		return err
+	}
 
 	var (
 		opts  []oci.SpecOpts

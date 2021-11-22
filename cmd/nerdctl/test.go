@@ -50,6 +50,7 @@ func newTestCommand() *cobra.Command {
 	runCmd.Flags().String("service", "gateway", "service type")
 	runCmd.Flags().String("tar_type", "FILE", "tar type")
 	runCmd.Flags().String("tar_url", "/home/zhouxiaoming/test/test", "tar url")
+	runCmd.Flags().Int("port", 80, "service export port")
 
 	deleteCmd := &cobra.Command{
 		Use:   "remove",
@@ -161,11 +162,13 @@ func testRunAction(cmd *cobra.Command, args []string) error {
 	}
 
 	tar_url, _ := cmd.Flags().GetString("tar_url")
+	port, _ := cmd.Flags().GetInt("port")
+	ptstr := fmt.Sprintf("%d:%d", port, port)
 
 	req := &dacscri.RunContainerRequest{
 		Image:   image,
 		Token:   token,
-		Publish: []string{"79:80"},
+		Publish: []string{ptstr},
 		App: &dacscri.App{
 			Type:    service,
 			TarType: tp,

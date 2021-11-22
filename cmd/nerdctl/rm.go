@@ -21,16 +21,20 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"syscall"
 
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/cio"
 	"github.com/containerd/containerd/errdefs"
+	"github.com/containerd/containerd/namespaces"
+	"github.com/containerd/containerd/pkg/cryptsetup"
 	"github.com/containerd/nerdctl/pkg/dnsutil/hostsstore"
 	"github.com/containerd/nerdctl/pkg/idutil/containerwalker"
 	"github.com/containerd/nerdctl/pkg/labels"
 	"github.com/containerd/nerdctl/pkg/namestore"
+	"github.com/containerd/nerdctl/pkg/sessionutil"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -62,9 +66,9 @@ func rmAction(cmd *cobra.Command, args []string) error {
 	}
 	defer cancel()
 
-	// if err := sessionutil.CheckSession(ctx, client); err != nil {
-	// 	return err
-	// }
+	if err := sessionutil.CheckSession(ctx, client); err != nil {
+		return err
+	}
 
 	dataStore, err := getDataStore(cmd)
 	if err != nil {
@@ -220,6 +224,20 @@ func removeContainer(cmd *cobra.Command, ctx context.Context, client *containerd
 
 	if err := container.Delete(ctx, delOpts...); err != nil {
 		return err
+	}
+
+	// delete encrypt files
+	encrypt, err := cryptsetup.LoadCryptState(filepath.Join(stateDir, "crypt.txt"))
+	if err != nil {
+		return err
+	}
+	encrptPath := filepath.Join(dataStore, "encrpts", namespaces.Default, id)
+	img := fmt.Sprintf("%s.img", encrptPath)
+	dev := &cryptsetup.CryptDevice{}
+	retErr = dev.CloseSecureFS(encrypt, encrptPath)
+	if retErr == nil {
+		retErr = os.Remove(img)
+		retErr = os.RemoveAll(encrptPath)
 	}
 
 	_, err = fmt.Fprintf(cmd.OutOrStdout(), "%s\n", req)

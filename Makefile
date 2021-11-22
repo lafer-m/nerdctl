@@ -48,12 +48,15 @@ nerdctl:
 dacsctl:
 	$(GO_BUILD) -o  $(CURDIR)/_output/dacsctl$(BIN_EXT) $(PACKAGE)/cmd/nerdctl
 
+proxy:
+	$(GO_BUILD) -o  $(CURDIR)/_output/dacsd-proxy$(BIN_EXT) $(PACKAGE)/cmd/nerd-proxy	
+
 clean:
 	find . -name \*~ -delete
 	find . -name \#\* -delete
 	rm -rf _output/*
 
-binaries: nerdctl
+binaries: nerdctl dacsctl proxy
 
 install:
 	install -D -m 755 $(CURDIR)/_output/nerdctl $(DESTDIR)$(BINDIR)/nerdctl

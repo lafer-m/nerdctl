@@ -239,7 +239,7 @@ func newApp() *cobra.Command {
 		newLogoutCommand(),
 
 		// Compose
-		newComposeCommand(),
+		// newComposeCommand(),
 
 		// session
 		newSessionCommand(),

@@ -27,12 +27,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const AppArmorProfileName = "nerdctl-default"
+const AppArmorProfileName = "dacsctl-default"
 const Runtime = plugin.RuntimeRuncV2
 
 func DataRoot() string {
 	if !rootlessutil.IsRootless() {
-		return "/var/lib/nerdctl"
+		return "/var/lib/dacsctl"
 	}
 	xdh, err := rootlessutil.XDGDataHome()
 	if err != nil {

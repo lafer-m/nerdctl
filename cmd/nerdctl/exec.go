@@ -28,6 +28,7 @@ import (
 	"github.com/containerd/containerd/cmd/ctr/commands/tasks"
 	"github.com/containerd/nerdctl/pkg/idgen"
 	"github.com/containerd/nerdctl/pkg/idutil/containerwalker"
+	"github.com/containerd/nerdctl/pkg/sessionutil"
 	"github.com/containerd/nerdctl/pkg/strutil"
 	"github.com/containerd/nerdctl/pkg/taskutil"
 	"github.com/opencontainers/runtime-spec/specs-go"
@@ -76,9 +77,9 @@ func execAction(cmd *cobra.Command, args []string) error {
 	}
 	defer cancel()
 
-	// if err := sessionutil.CheckSession(ctx, client); err != nil {
-	// 	return err
-	// }
+	if err := sessionutil.CheckSession(ctx, client); err != nil {
+		return err
+	}
 
 	walker := &containerwalker.ContainerWalker{
 		Client: client,

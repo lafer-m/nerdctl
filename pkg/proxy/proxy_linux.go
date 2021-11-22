@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const userlandProxyCommandName = "nerd-proxy"
+const userlandProxyCommandName = "dacsd-proxy"
 
 func newProxyCommand(proto string, hostIP net.IP, hostPort int, containerIP net.IP, containerPort int, proxyPath string) (userlandProxy, error) {
 	path := proxyPath
