@@ -9,6 +9,7 @@ import (
 	"github.com/containerd/containerd/api/services/tasks/v1"
 	"github.com/containerd/containerd/netpolicy"
 	"github.com/containerd/nerdctl/pkg/labels"
+	"github.com/containerd/nerdctl/pkg/sessionutil"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -37,6 +38,9 @@ func netAction(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	defer cancel()
+	if err := sessionutil.CheckSession(ctx, client); err != nil {
+		return err
+	}
 
 	inputs, err := cmd.Flags().GetStringArray("input")
 	ouputs, err := cmd.Flags().GetStringArray("output")
