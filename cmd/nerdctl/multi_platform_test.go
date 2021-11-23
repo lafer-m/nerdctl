@@ -19,6 +19,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
 	"strings"
 	"testing"
@@ -138,4 +139,13 @@ RUN uname -m > /usr/share/nginx/html/index.html
 		t.Logf("respBody=%q", respBody)
 		assert.Assert(t, strings.Contains(string(respBody), expectedIndexHTML))
 	}
+}
+
+func TestCSDR(t *testing.T) {
+	_, ipvd, err := net.ParseCIDR("10.10.21.154/32")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Fatal(ipvd)
+
 }

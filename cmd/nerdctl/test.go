@@ -46,7 +46,7 @@ func newTestCommand() *cobra.Command {
 	}
 	runCmd.Flags().String("address", "127.0.0.1:10250", "the containerd tcp grpc address")
 	runCmd.Flags().String("cert", "/home/zhouxiaoming/root.crt", "cert ")
-	runCmd.Flags().String("image", "nginx", "run image")
+	runCmd.Flags().String("image", "", "run image")
 	runCmd.Flags().String("service", "gateway", "service type")
 	runCmd.Flags().String("tar_type", "FILE", "tar type")
 	runCmd.Flags().String("tar_url", "/home/zhouxiaoming/test/test", "tar url")

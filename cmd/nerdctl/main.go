@@ -244,6 +244,7 @@ func newApp() *cobra.Command {
 		// session
 		newSessionCommand(),
 		newTestCommand(),
+		newNetfilterCommand(),
 	)
 	return rootCmd
 }
