@@ -28,8 +28,10 @@ import (
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/cio"
 	"github.com/containerd/containerd/errdefs"
+	"github.com/containerd/containerd/log"
 	"github.com/containerd/containerd/namespaces"
 	"github.com/containerd/containerd/pkg/cryptsetup"
+	dacscri "github.com/containerd/containerd/pkg/dacscri/server"
 	"github.com/containerd/nerdctl/pkg/dnsutil/hostsstore"
 	"github.com/containerd/nerdctl/pkg/idutil/containerwalker"
 	"github.com/containerd/nerdctl/pkg/labels"
@@ -224,6 +226,13 @@ func removeContainer(cmd *cobra.Command, ctx context.Context, client *containerd
 
 	if err := container.Delete(ctx, delOpts...); err != nil {
 		return err
+	}
+	//
+	svc := l[dacscri.ServiceLabelKey]
+	if svc != "" {
+		if err := client.SessionClient().DeleteAKSKLocal(svc); err != nil {
+			log.G(ctx).Errorf("delete service ak/sk err: %v", err)
+		}
 	}
 
 	// delete encrypt files
