@@ -59,8 +59,8 @@ func xmain() error {
 
 func newApp() *cobra.Command {
 	var rootCmd = &cobra.Command{
-		Use:           "nerdctl",
-		Short:         "nerdctl is a command line interface for containerd",
+		Use:           "dacsctl",
+		Short:         "dacsctl is a command line interface for dacsd",
 		Version:       strings.TrimPrefix(version.Version, "v"),
 		SilenceUsage:  true,
 		SilenceErrors: true,
@@ -73,7 +73,7 @@ func newApp() *cobra.Command {
 			&pflag.Flag{
 				Name:      "address",
 				Shorthand: "a",
-				Usage:     `containerd address, optionally with "unix://" prefix`,
+				Usage:     `dacsd address, optionally with "unix://" prefix`,
 				EnvVars:   []string{"CONTAINERD_ADDRESS"},
 				Value:     pflag.NewStringValue(defaults.DefaultAddress, address),
 			},
@@ -91,7 +91,7 @@ func newApp() *cobra.Command {
 		&pflag.Flag{
 			Name:      "namespace",
 			Shorthand: "n",
-			Usage:     `containerd namespace, such as "moby" for Docker, "k8s.io" for Kubernetes`,
+			Usage:     `dacsd namespace, such as "moby" for Docker, "k8s.io" for Kubernetes`,
 			EnvVars:   []string{"CONTAINERD_NAMESPACE"},
 			Value:     pflag.NewStringValue(namespaces.Default, new(string)),
 		},
@@ -102,7 +102,7 @@ func newApp() *cobra.Command {
 		rootCmd.PersistentFlags().AddFlag(
 			&pflag.Flag{
 				Name:    "snapshotter",
-				Usage:   "containerd snapshotter",
+				Usage:   "dacsd snapshotter",
 				EnvVars: []string{"CONTAINERD_SNAPSHOTTER"},
 				Value:   pflag.NewStringValue(containerd.DefaultSnapshotter, snapshotter),
 			},
@@ -189,10 +189,10 @@ func newApp() *cobra.Command {
 		newRestartCommand(),
 		newKillCommand(),
 		newRmCommand(),
-		newPauseCommand(),
-		newUnpauseCommand(),
-		newCommitCommand(),
-		newWaitCommand(),
+		// newPauseCommand(),
+		// newUnpauseCommand(),
+		// newCommitCommand(),
+		// newWaitCommand(),
 		// #endregion
 
 		// Build
@@ -204,39 +204,39 @@ func newApp() *cobra.Command {
 		newPushCommand(),
 		newLoadCommand(),
 		newSaveCommand(),
-		newTagCommand(),
+		// newTagCommand(),
 		newRmiCommand(),
 		// #endregion
 
 		// #region System
-		newEventsCommand(),
+		// newEventsCommand(),
 		newInfoCommand(),
-		newVersionCommand(),
+		// newVersionCommand(),
 		// #endregion
 
 		// Inspect
 		newInspectCommand(),
 
 		// stats
-		newTopCommand(),
+		// newTopCommand(),
 
 		// #region Management
-		newContainerCommand(),
+		// newContainerCommand(),
 		newImageCommand(),
-		newNetworkCommand(),
-		newVolumeCommand(),
-		newSystemCommand(),
-		newNamespaceCommand(),
+		// newNetworkCommand(),
+		// newVolumeCommand(),
+		// newSystemCommand(),
+		// newNamespaceCommand(),
 		// #endregion
 
 		// Internal
 		newInternalCommand(),
 
 		// login
-		newLoginCommand(),
+		// newLoginCommand(),
 
 		// Logout
-		newLogoutCommand(),
+		// newLogoutCommand(),
 
 		// Compose
 		// newComposeCommand(),

@@ -101,7 +101,7 @@ func printContainers(ctx context.Context, cmd *cobra.Command, containers []conta
 	case "", "table":
 		w = tabwriter.NewWriter(os.Stdout, 4, 8, 4, ' ', 0)
 		if !quiet {
-			fmt.Fprintln(w, "CONTAINER ID\tIMAGE\tCOMMAND\tCREATED\tSTATUS\tPORTS\tNAMES")
+			fmt.Fprintln(w, "SANDBOX ID\tIMAGE\tCOMMAND\tCREATED\tSTATUS\tPORTS\tNAMES")
 		}
 	case "raw":
 		return errors.New("unsupported format: \"raw\"")
