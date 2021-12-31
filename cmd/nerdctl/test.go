@@ -169,6 +169,7 @@ func testRunAction(cmd *cobra.Command, args []string) error {
 		Image:   image,
 		Token:   token,
 		Publish: []string{ptstr},
+		Restart: dacscri.RESTARTPOLICY_NO,
 		App: &dacscri.App{
 			Type:    service,
 			TarType: tp,

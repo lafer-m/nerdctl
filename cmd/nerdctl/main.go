@@ -191,7 +191,7 @@ func newApp() *cobra.Command {
 		newRmCommand(),
 		// newPauseCommand(),
 		// newUnpauseCommand(),
-		// newCommitCommand(),
+		newCommitCommand(),
 		// newWaitCommand(),
 		// #endregion
 
@@ -204,7 +204,7 @@ func newApp() *cobra.Command {
 		newPushCommand(),
 		newLoadCommand(),
 		newSaveCommand(),
-		// newTagCommand(),
+		newTagCommand(),
 		newRmiCommand(),
 		// #endregion
 

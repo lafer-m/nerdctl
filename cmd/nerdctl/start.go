@@ -20,9 +20,13 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"path/filepath"
 
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/cio"
+	"github.com/containerd/containerd/namespaces"
+	"github.com/containerd/containerd/pkg/cryptsetup"
+	"github.com/containerd/containerd/pkg/dacscri/utils"
 	"github.com/containerd/nerdctl/pkg/formatter"
 	"github.com/containerd/nerdctl/pkg/idutil/containerwalker"
 	"github.com/containerd/nerdctl/pkg/labels"
@@ -86,6 +90,23 @@ func startContainer(ctx context.Context, container containerd.Container) error {
 	if err != nil {
 		return err
 	}
+
+	// delete encrypt files
+	dataStore, err := utils.GetDataStore()
+	if err != nil {
+		return err
+	}
+
+	id := container.ID()
+	encrptPath := filepath.Join(dataStore, "encrpts", namespaces.Default, id)
+	encryptIMG := fmt.Sprintf("%s.img", encrptPath)
+	dev := &cryptsetup.CryptDevice{}
+
+	_, err = dev.OpenSecureFS(encryptIMG, encrptPath, []byte("encryptdumpkey"))
+	if err != nil {
+		logrus.Warnf("open fs err: %v", err)
+	}
+
 	taskCIO := cio.NullIO
 	if logURIStr := lab[labels.LogURI]; logURIStr != "" {
 		logURI, err := url.Parse(logURIStr)
