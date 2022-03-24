@@ -27,6 +27,7 @@ require (
 	github.com/docker/go-units v0.4.0
 	github.com/fatih/color v1.13.0
 	github.com/gogo/protobuf v1.3.2
+	github.com/google/uuid v1.3.0
 	github.com/ishidawataru/sctp v0.0.0-20210707070123-9a39160e9062
 	github.com/mattn/go-isatty v0.0.14
 	github.com/moby/sys/mount v0.2.0 // indirect
